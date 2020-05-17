@@ -1,6 +1,7 @@
 const express = require("express");
-const mongojs = require("mongojs");
+const mongoose = require("mongoose");
 const logger = require("morgan");
+const PORT = 3000;
 
 
 const app = express();
@@ -12,103 +13,14 @@ app.use(express.json());
 
 app.use(express.static("public"));
 
-const databaseUrl = "workout";
-const collections = ["notes"];
+mongoose.connect("mongodb://localhost/workout", {
+  useNewUrlParser: true,
+  useFindAndModify: false
+})
 
-const db = mongojs(databaseUrl, collections);
+app.use(require("./routes/api-routes"))
+app.use(require("./routes/html-routes"))
 
-db.on("error", error => {
-  console.log("Database Error:", error);
-});
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname + "./public/index.html"));
-});
-
-app.post("/submit", (req, res) => {
-  console.log(req.body);
-
-  db.notes.insert(req.body, (error, data) => {
-    if (error) {
-      res.send(error);
-    } else {
-      res.send(data);
-    }
-  });
-});
-
-app.get("/all", (req, res) => {
-  db.notes.find({}, (error, data) => {
-    if (error) {
-      res.send(error);
-    } else {
-      res.json(data);
-    }
-  });
-});
-
-app.get("/find/:id", (req, res) => {
-  db.notes.findOne(
-    {
-      _id: mongojs.ObjectId(req.params.id)
-    },
-    (error, data) => {
-      if (error) {
-        res.send(error);
-      } else {
-        res.send(data);
-      }
-    }
-  );
-});
-
-app.post("/update/:id", (req, res) => {
-  db.notes.update(
-    {
-      _id: mongojs.ObjectId(req.params.id)
-    },
-    {
-      $set: {
-        title: req.body.title,
-        note: req.body.note,
-        modified: Date.now()
-      }
-    },
-    (error, data) => {
-      if (error) {
-        res.send(error);
-      } else {
-        res.send(data);
-      }
-    }
-  );
-});
-
-app.delete("/delete/:id", (req, res) => {
-  db.notes.remove(
-    {
-      _id: mongojs.ObjectID(req.params.id)
-    },
-    (error, data) => {
-      if (error) {
-        res.send(error);
-      } else {
-        res.send(data);
-      }
-    }
-  );
-});
-
-app.delete("/clearall", (req, res) => {
-  db.notes.remove({}, (error, response) => {
-    if (error) {
-      res.send(error);
-    } else {
-      res.send(response);
-    }
-  });
-});
-
-app.listen(3000, () => {
+app.listen(PORT, () => {
   console.log("App running on port 3000!");
 });
